@@ -1,101 +1,101 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash
+
+db = SQLAlchemy()
 
 
 db = SQLAlchemy()
 
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), nullable=False, unique=True)
-    email = db.Column(db.String, nullable=False, unique=True)
-    password = db.Column(db.String, nullable=False)
+class User(db.Model):
+    id = db.Column(db.Integer, unique=True, index=True, primary_key=True)
+    uid = db.Column(db.String(128), nullable=False, unique=True, index=True)
+    name = db.Column(db.String(128), nullable=False)
     img = db.Column(db.String(500), nullable=True)
-    city = db.relationship('City', lazy=True)
-    trips = db.relationship('City',lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
-
-    def __init__(self, username, email, password, img):
-        self.username = username
-        self.email = email
-        self.password = generate_password_hash(password)
+    def __init__(self, uid, name, img):
+        self.uid = uid
+        self.name = name
         self.img = img
-        #self.password = password   ---OLD  not hashed
 
-    def saveUser(self):
+    def create(self):
         db.session.add(self)
         db.session.commit()
+        return self
 
     def delete(self):
         db.session.delete(self)
         db.session.commit()
         return self
-    
-    def unTrip(self, city):
-        self.trips.remove(city)
-        db.session.commit()
-
-    def cleartrips(self):
-        self.trips=[]
-        db.session.commit()
-    
-    def addTrips(self, product):
-        self.trips.append(product)
-        db.session.commit()
 
     def to_dict(self):
         return {
             'id': self.id,
-            'username' : self.username,
+            'uid': self.uid,
+            'name': self.name,
             'img': self.img,
         }
 
-trips = db.Table(
-    'savedTrips',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
-    db.Column('city_id', db.Integer, db.ForeignKey('city.id'), nullable=False)
-)
 
 #For this purpose, do we need to create a user_id relationship with the city?
 
 class City(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    city = db.Column(db.String(100), nullable=False)
-    date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(280), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_uid = db.Column(db.String, db.ForeignKey('user.uid'), nullable=False)
+    user = db.relationship('User', backref=db.backref('user', lazy=True))
 
-    def __init__(self, city, user_id):
-        self.city= city()
-        self.user_id = user_id()
-        return self
+    def __init__(self, name, user_uid):
+        self.name = name
+        self.user_uid = user_uid
 
-    def saveTrip(self):
+    def create(self):
         db.session.add(self)
         db.session.commit()
         return self
 
-    #User.id = relationship between user and saved trips
-# See pokemon(saved teams )
-#We should be able to add to our list from Search results page
-    # def addTrips(self, city):
-    #     self.trips.append(city)
-    #     db.session.commit()
-#We should be able to delete from our list(see ecomm project)
-    def deleteTrips(self):
-        self.trips.delete(self)
+    def delete(self):
+        db.session.delete(self)
         db.session.commit()
         return self
-#We should be able to clear our entire list (see ecomm project)
-    # def clearTrips(self):
-    #     self.trips=[]
-    #     db.session.commit()
 
     def to_dict(self):
         return {
             'id': self.id,
-            'city': self.city,
+            'name': self.name,
             'created_at': self.created_at,
             'user': self.user.to_dict(),
+        }
+    
+class Trip(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(280), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_uid = db.Column(db.String, db.ForeignKey('user.uid'), nullable=False)
+    user = db.relationship('User', backref=db.backref('trip_user', lazy=True))
+    city_id = db.Column(db.Integer, db.ForeignKey('city.id'), nullable=False)
+
+    def __init__(self, name, user_uid, city_id):
+        self.name = name
+        self.user_uid = user_uid
+        self.city_id = city_id
+
+    def create(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'created_at': self.created_at,
+            'user': self.user.to_dict(),
+            'city_id': self.city_id
         }

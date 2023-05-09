@@ -1,44 +1,64 @@
 from flask import Blueprint, request
-from ..models import db, User, City
-
+from ..models import db, User, City, Trip
 
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
+# Get the city 
 
-@api.get('/Cities')
+@api.get('/city')
 def get_cities():
-    cities = City.query.order_by(City.created_at.desc()).all()
-    if not cities:
-        return {'status': 'not ok', 'message': 'Unable to get cities'}
-    return {'status': 'ok', 'cities': [city.to_dict() for city in cities]}
+    city = City.query.order_by(City.created_at.desc()).all()
+    if not city:
+        return {'status': 'not ok', 'message': 'Unable to get city'}
+    return {'status': 'ok', 'city': [city.to_dict() for city in city]}
 
-@api.get('/cities/<uid>')
-def get_user_cities(uid):
-    cities = City.query.filter_by(user_uid=uid).order_by(City.created_at.desc()).all()
-    if not cities:
-        return {'status': 'not ok', 'message': 'Unable to get cities'}
-    cities = [city.to_dict() for city in cities]
-    return {'status': 'ok', 'cities': cities}
+# Get the city searched for by user? 
 
-@api.get('/cities/<int:id>')
+@api.get('/city/<int:id>')
 def get_city(id):
     city = City.query.get(id)
     if not city:
         return {'status': 'not ok', 'message': 'Unable to get city'}
     return {'status': 'ok', 'city': city.to_dict()}
 
-@api.post('/cities')
-def create_city():
+# Save city 
+
+@api.post('/city')
+def save_city():
     user_uid = request.json.get('user_uid')
-    body = request.json.get('body')
+    name = request.json.get('name')
     user = User.query.filter_by(uid=user_uid).first()
-    if not body or not user_uid or not user:
+    if not name or not user_uid or not user:
         return {'status': 'not ok', 'message': 'Unable to create city'}
-    city = City(user_uid=user_uid, body=body).create()
+    city = City(user_uid=user_uid, name=name).create()
     return {'status': 'ok', 'city': city.to_dict()}
 
-@api.delete('/cities/<int:id>')
+# get the trips from the user specifically - will use these to create the list of "my trips"
+
+@api.get('/trip/<uid>')
+def get_user_trips(uid):
+    trip = Trip.query.filter_by(user_uid=uid).order_by(Trip.created_at.desc()).all()
+    if not trip:
+        return {'status': 'not ok', 'message': 'Unable to get trip'}
+    trip = [trip.to_dict() for trip in trip]
+    return {'status': 'ok', 'trip': trip}
+
+# Save the trip- will use to save to "my trips"? 
+
+@api.post('/trip')
+def save_trip():
+    user_uid = request.json.get('user_uid')
+    name = request.json.get('name')
+    user = User.query.filter_by(uid=user_uid).first()
+    if not name or not user_uid or not user:
+        return {'status': 'not ok', 'message': 'Unable to create city'}
+    trip = Trip(user_uid=user_uid, name=name).create()
+    return {'status': 'ok', 'trip': trip.to_dict()}
+
+# delete city from list of my trips - not sure if I need this 
+
+@api.delete('/city/<int:id>')
 def delete_city(id):
     city = City.query.get(id)
     if not city:
@@ -46,8 +66,7 @@ def delete_city(id):
     city.delete()
     return {'status': 'ok', 'city': city.to_dict()}
 
-
-# USERS Models 
+# Gets users - all
 
 @api.get('/users')
 def get_users():
@@ -56,12 +75,16 @@ def get_users():
         return {'status': 'not ok', 'message': 'Unable to get users'}
     return {'status': 'ok', 'users': [user.to_dict() for user in users]}
 
+# Gets user with UID
+
 @api.get('/users/<uid>')
 def get_user(uid):
     user = User.query.filter_by(uid=uid).first()
     if not user:
         return {'status': 'not ok', 'message': 'Unable to get user'}
     return {'status': 'ok', 'user': user.to_dict()}
+
+# API Post all users  
 
 @api.post('/users')
 def create_user():
