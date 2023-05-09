@@ -1,3 +1,4 @@
+
 from flask import Blueprint, render_template, redirect, url_for, request
 from flask_login import logout_user, login_user, current_user
 from werkzeug.security import check_password_hash
@@ -43,9 +44,10 @@ def registerPage():
             username = form.username.data
             email = form.email.data
             password = form.password.data
-            print(username, email, password)
+            img = form.img.data
+            print(username, email, password, img)
 
-            user = User(username, email, password)            
+            user = User(username, email, password, img)            
             user.saveUser()
             return redirect(url_for('auth.loginPage'))
         else: 

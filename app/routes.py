@@ -4,7 +4,7 @@ from app import app
 from flask import render_template, request, url_for, redirect
 from flask_login import current_user, login_user, logout_user, LoginManager
 
-from .auth.forms import pSearch, SignUpForm, LoginForm
+from .auth.forms import CitySearch, SignUpForm, LoginForm
 from .models import User
 
 
