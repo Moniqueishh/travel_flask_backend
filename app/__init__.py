@@ -4,7 +4,6 @@ from config import Config
 
 from .api.routes import api
 
-from .auth.routes import auth
 
 from .models import db, User
 from flask_migrate import Migrate
@@ -35,7 +34,7 @@ login.init_app(app)
 login.login_view = 'auth.loginPage'
 
 app.register_blueprint(api)
-app.register_blueprint(auth)
+
 
 
 from . import routes
